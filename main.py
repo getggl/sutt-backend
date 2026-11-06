@@ -1,11 +1,20 @@
 import json
 import os
+import sys
 import datetime
+import signal
+
+import ctxt
 
 
 
-state = {}
-file_name = "state.json"
+#signal.signal(signal.SIGINT, sys.exit)
+
+
+state = {
+    "requests": [],
+    "cabs" : []
+}
 
 
 
@@ -50,8 +59,16 @@ def read_state():
         phase = json.load(file)
 
 
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-while True: # main loop
+
+
+def init():
+    pass
+
+
+def main():
     print("Select option:")
     print("1) Add new student entry")
     print("2) View cab allotment")
@@ -61,13 +78,66 @@ while True: # main loop
     i = input("Selected option: ")
     
     if i == "1":
-        print(i) # move to new student section
-        os.system('cls' if os.name == 'nt' else 'clear')
+        clear()
+        menu_add_student()
     elif i == "2":
-        print(i)
+        clear()
+        menu_view_cabs()
     elif i == "3":
-        print(i)
+        clear()
+        menu_dispatch()
     elif i == "4":
-        exit()
+        clear()
+        print("Quitting...")
+        sys.exit()
     else:
-        print("Invalid choice, try again")
+        clear()
+        print(ctxt.red("Invalid choice, try again"))
+
+
+def menu_add_student():
+    name = input("Enter name of student: ")
+    destination = ""
+    time_slot = ""
+    year = -1
+
+    while True:
+        destination = input("Enter destination (Delhi or Jaipur): ").lower()
+        if destination in ["delhi", "jaipur"]:
+            break
+        else:
+            print(ctxt.red("Invalid destination. Enter either Delhi or Jaipur"))
+
+    while True:
+        time_slot = input("Enter time slot (Morning, Afternoon, Evening, Night): ").lower()
+        if time_slot in ["morning", "afternoon", "evening", "night"]:
+            break
+        else:
+            print(ctxt.red("Invalid time slot"))
+    
+    while True:
+        year = input("Enter year (1 to 5): ")
+        if year in ["1", "2", "3", "4", "5"]:
+            year = int(year)
+            break
+        else:
+            print(ctxt.red("Invalid year. Year must be 1-5"))
+    
+    state["requests"].append(RideRequest(name, destination, time_slot, year))
+    clear()
+    print(f"Successfully added! Time stamp: {state["requests"][-1].timestamp}")
+
+
+def menu_view_cabs():
+    pass
+
+
+def menu_dispatch():
+    pass
+
+
+
+clear()
+init()
+while True: # main loop
+    main()
