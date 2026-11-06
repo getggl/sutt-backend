@@ -3,69 +3,126 @@ import os
 import sys
 import datetime
 import signal
+import atexit
 
 import ctxt
 
-
-
-#signal.signal(signal.SIGINT, sys.exit)
 
 
 state = {
     "requests": [],
     "cabs" : []
 }
+file_name = "state.json"
+cab_file_name = "cabs.json"
 
 
 
 class RideRequest:
-    def __init__(self, name: str, destination: str, time_slot: str, year: int):
+    def __init__(self, name: str, destination: str, time_slot: str, year: int, timestamp=None):
+        if timestamp and isinstance(timestamp, str):
+            timestamp = datetime.datetime.fromisoformat(timestamp)
         self.name = name
         self.destination = destination
         self.time_slot = time_slot
         self.year = year
-        self.timestamp = datetime.datetime.now()
+        self.timestamp = timestamp if timestamp is not None else datetime.datetime.now()
 
     def __str__(self):
         return f"Name:{self.name}, Year:{self.year}), Dest:{self.destination} Slot:{self.time_slot}"
+    
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "destination": self.destination,
+            "time_slot": self.time_slot,
+            "year": self.year,
+            "timestamp": self.timestamp.isoformat()
+        }
 
 
 class Cab:
-    def __init__(self, driver_name: str, capacity: int, destination: str, time_slot: str):
+    def __init__(self, driver_name: str, capacity: int, destination: str, time_slot: str, has_left=False, students=None):
         self.driver_name = driver_name
         self.capacity = capacity  # 1 to 4
         self.destination = destination
         self.time_slot = time_slot
-        self.has_left = False  # tracks whether the cab has departed yet
-        self.students = []     # list of students currently in the cab
+        self.has_left = has_left
+        self.students = students if students is not None else []
 
     def is_full(self) -> bool:
         return len(self.students) >= self.capacity
 
     def __str__(self):
         status = "Left" if self.has_left else "Open"
-        return (f"Driver: {self.driver_name} | Dest: {self.destination} | "
-                f"Slot: {self.time_slot}, Seats: {len(self.students)}/{self.capacity}, Status: {status}")
+        return (f"Driver: {self.driver_name}, Dest: {self.destination}, Slot: {self.time_slot}, Seats: {len(self.students)}/{self.capacity}, Status: {status}")
+
+    def to_dict(self) -> dict:
+        return {
+            "driver_name": self.driver_name,
+            "capacity": self.capacity,
+            "destination" : self.destination,
+            "time_slot" : self.time_slot,
+            "has_left" : self.has_left,
+            "students" : [student.to_dict() for student in self.students]
+
+        }
 
 
 
-def write_state(s=state):
+def write_state():
+    json_state = {
+        "requests": [req.to_dict() for req in state["requests"]],
+        "cabs": [cab.to_dict() for cab in state["cabs"]]
+    }
     with open(file_name, "w", encoding="utf-8") as file:
-        json.dump(state, file, indent=4)
+        json.dump(json_state, file, indent=4)
+    
 
 
 def read_state():
     with open(file_name, "r", encoding="utf-8") as file:
-        phase = json.load(file)
+        json_state = json.load(file)
+        state["requests"] = [RideRequest(**req) for req in json_state["requests"]]
+        state["cabs"] = [Cab(**cab) for cab in json_state["cabs"]]
+        for cab in state["cabs"]:
+            cab.students = [RideRequest(**student) for student in cab.students]
 
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
+def clean_exit(signum, frame):
+    print("\nSIGINT: Saving state...")
+    write_state()
+    print(ctxt.green("State successfully saved. Exiting..."))
+    sys.exit(0)
+
 
 def init():
-    pass
+    if os.path.exists(file_name):
+        try:
+            read_state()
+            print(ctxt.green("Successfully loaded application state from state.json"))
+        except Exception as e:
+            print(ctxt.red(f"Error loading state.json: {e}"))
+            sys.exit(1)
+    elif os.path.exists(cab_file_name):
+        try:
+            with open(cab_file_name, "r", encoding="utf-8") as file:
+                cab_list_data = json.load(file)
+            state["cabs"] = [Cab(**cab) for cab in cab_list_data]
+            state["requests"] = []
+            print(ctxt.green("Successfully loaded initial cabs from cabs.json"))
+        except Exception as e:
+            print(ctxt.red(f"Error loading cabs.json: {e}"))
+            sys.exit(1)
+    else:
+        print(ctxt.red("Neither 'state.json' nor 'cabs.json' found, exiting..."))
+        sys.exit(1)
+    atexit.register(write_state)
+    signal.signal(signal.SIGINT, clean_exit)
 
 
 def main():
@@ -89,6 +146,7 @@ def main():
     elif i == "4":
         clear()
         print("Quitting...")
+        write_state()
         sys.exit()
     else:
         clear()
@@ -136,8 +194,7 @@ def menu_dispatch():
     pass
 
 
-
 clear()
 init()
-while True: # main loop
+while True:
     main()
