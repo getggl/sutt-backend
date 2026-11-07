@@ -79,7 +79,6 @@ def write_state():
         json.dump(json_state, file, indent=4)
     
 
-
 def read_state():
     with open(file_name, "r", encoding="utf-8") as file:
         json_state = json.load(file)
@@ -99,6 +98,20 @@ def clean_exit(signum, frame):
     print(ctxt.green("State successfully saved. Exiting..."))
     sys.exit(0)
 
+
+def allot_cabs():
+    for cab in state["cabs"]: # clear previous allotment to allow recomputation
+        if not cab.has_left:
+            cab.students = []
+    sorted_requests = sorted(state["requests"], key=lambda r: (-r.year, r.timestamp))
+    for request in sorted_requests:
+        for cab in state["cabs"]:
+            if (cab.destination == request.destination and
+                cab.time_slot == request.time_slot and
+                not cab.is_full() and
+                not cab.has_left):
+                cab.students.append(request)
+                break
 
 def init():
     if os.path.exists(file_name):
@@ -187,11 +200,37 @@ def menu_add_student():
 
 
 def menu_view_cabs():
-    pass
+    allot_cabs()
+    for cab in state["cabs"]:
+        # make the colors different for dispatched and undispatched cabs
+        if cab.has_left:
+            print(ctxt.red(cab))
+        else:
+            print(ctxt.blue(cab))
+
+        if cab.students:
+            for student in cab.students:
+                print(ctxt.yellow(f"  - {student}"))
+        else:
+            print(ctxt.red("  - No students assigned yet"))
 
 
 def menu_dispatch():
-    pass
+    allot_cabs()
+    for i, cab in enumerate(state["cabs"]):
+        if not cab.has_left:
+            print(ctxt.blue(str(i+1) + " " + str(cab)))
+            if cab.students:
+                for student in cab.students:
+                    print(ctxt.yellow(f"  - {student}"))
+            else:
+                print(ctxt.red("  - No students assigned yet"))
+    cab_number = input("Press number of cab to dispatch (or press Enter to go back): ")
+    if cab_number.isdigit():
+        cab_index = int(cab_number) - 1
+        if 0 <= cab_index < len(state["cabs"]):
+            state["cabs"][cab_index].has_left = True
+            print(ctxt.green("Cab dispatched successfully!"))
 
 
 clear()

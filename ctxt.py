@@ -6,3 +6,12 @@ def green(text: str) -> str:
 
 def blue(text: str) -> str:
     return f"\033[34m{text}\033[0m"
+
+def yellow(text: str) -> str:
+    return f"\033[33m{text}\033[0m"
+
+def magenta(text: str) -> str:
+    return f"\033[35m{text}\033[0m"
+
+def cyan(text: str) -> str:
+    return f"\033[36m{text}\033[0m"
