@@ -29,7 +29,7 @@ class RideRequest:
         self.timestamp = timestamp if timestamp is not None else datetime.datetime.now()
 
     def __str__(self):
-        return f"Name:{self.name}, Year:{self.year}), Dest:{self.destination} Slot:{self.time_slot}"
+        return f"Name:{self.name}, Year:{self.year}, Dest:{self.destination} Slot:{self.time_slot}"
     
     def to_dict(self) -> dict:
         return {
@@ -213,6 +213,7 @@ def menu_view_cabs():
                 print(ctxt.yellow(f"  - {student}"))
         else:
             print(ctxt.red("  - No students assigned yet"))
+    print(ctxt.magenta(f"Number of students waiting for cabs: {len(state['requests'])}"))
 
 
 def menu_dispatch():
@@ -225,12 +226,23 @@ def menu_dispatch():
                     print(ctxt.yellow(f"  - {student}"))
             else:
                 print(ctxt.red("  - No students assigned yet"))
+    print(ctxt.magenta(f"Number of students waiting for cabs: {len(state['requests'])}"))
     cab_number = input("Press number of cab to dispatch (or press Enter to go back): ")
     if cab_number.isdigit():
         cab_index = int(cab_number) - 1
         if 0 <= cab_index < len(state["cabs"]):
-            state["cabs"][cab_index].has_left = True
+            dispatched_cab = state["cabs"][cab_index]
+            dispatched_cab.has_left = True
+            for student in dispatched_cab.students:
+                if student in state["requests"]:
+                    state["requests"].remove(student)
             print(ctxt.green("Cab dispatched successfully!"))
+        else:
+            clear()
+            print(ctxt.red("Invalid cab number"))
+    else:
+        print("Returning to main menu...")
+
 
 
 clear()
