@@ -1,0 +1,34 @@
+[
+    {
+        "driver_name": "John",
+        "capacity": 4,
+        "destination": "delhi",
+        "time_slot": "morning",
+        "has_left": false,
+        "students": []
+    },
+    {
+        "driver_name": "Doe",
+        "capacity": 3,
+        "destination": "delhi",
+        "time_slot": "morning",
+        "has_left": false,
+        "students": []
+    },
+    {
+        "driver_name": "Jane",
+        "capacity": 4,
+        "destination": "jaipur",
+        "time_slot": "evening",
+        "has_left": false,
+        "students": []
+    },
+    {
+        "driver_name": "Dough",
+        "capacity": 2,
+        "destination": "jaipur",
+        "time_slot": "night",
+        "has_left": false,
+        "students": []
+    }
+]
