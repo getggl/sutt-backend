@@ -29,7 +29,7 @@ class RideRequest:
         self.timestamp = timestamp if timestamp is not None else datetime.datetime.now()
 
     def __str__(self):
-        return f"Name:{self.name}, Year:{self.year}, Dest:{self.destination} Slot:{self.time_slot}"
+        return f"Student: {self.name} | Year: {self.year} | Dest: {self.destination} | Slot: {self.time_slot}"
     
     def to_dict(self) -> dict:
         return {
@@ -44,7 +44,7 @@ class RideRequest:
 class Cab:
     def __init__(self, driver_name: str, capacity: int, destination: str, time_slot: str, has_left=False, students=None):
         self.driver_name = driver_name
-        self.capacity = capacity  # 1 to 4
+        self.capacity = capacity
         self.destination = destination
         self.time_slot = time_slot
         self.has_left = has_left
@@ -55,7 +55,7 @@ class Cab:
 
     def __str__(self):
         status = "Left" if self.has_left else "Open"
-        return (f"Driver: {self.driver_name}, Dest: {self.destination}, Slot: {self.time_slot}, Seats: {len(self.students)}/{self.capacity}, Status: {status}")
+        return f"Driver: {self.driver_name} | Dest: {self.destination} | Slot: {self.time_slot} | Seats: {len(self.students)}/{self.capacity} | [{status}]"
 
     def to_dict(self) -> dict:
         return {
@@ -65,9 +65,7 @@ class Cab:
             "time_slot" : self.time_slot,
             "has_left" : self.has_left,
             "students" : [student.to_dict() for student in self.students]
-
         }
-
 
 
 def write_state():
@@ -92,15 +90,19 @@ def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
+def pause():
+    input(ctxt.cyan("\nPress Enter to return to main menu..."))
+
+
 def clean_exit(signum, frame):
-    print("\nSIGINT: Saving state...")
+    print(ctxt.cyan("\nSIGINT: Saving state..."))
     write_state()
     print(ctxt.green("State successfully saved. Exiting..."))
     sys.exit(0)
 
 
 def allot_cabs():
-    for cab in state["cabs"]: # clear previous allotment to allow recomputation
+    for cab in state["cabs"]:
         if not cab.has_left:
             cab.students = []
     sorted_requests = sorted(state["requests"], key=lambda r: (-r.year, r.timestamp))
@@ -113,13 +115,14 @@ def allot_cabs():
                 cab.students.append(request)
                 break
 
+
 def init():
     if os.path.exists(file_name):
         try:
             read_state()
-            print(ctxt.green("Successfully loaded application state from state.json"))
+            print(ctxt.green("✔ Successfully loaded application state from state.json"))
         except Exception as e:
-            print(ctxt.red(f"Error loading state.json: {e}"))
+            print(ctxt.red(f"✖ Error loading state.json: {e}"))
             sys.exit(1)
     elif os.path.exists(cab_file_name):
         try:
@@ -127,25 +130,29 @@ def init():
                 cab_list_data = json.load(file)
             state["cabs"] = [Cab(**cab) for cab in cab_list_data]
             state["requests"] = []
-            print(ctxt.green("Successfully loaded initial cabs from cabs.json"))
+            print(ctxt.green("✔ Successfully loaded initial cabs from cabs.json"))
         except Exception as e:
-            print(ctxt.red(f"Error loading cabs.json: {e}"))
+            print(ctxt.red(f"✖ Error loading cabs.json: {e}"))
             sys.exit(1)
     else:
-        print(ctxt.red("Neither 'state.json' nor 'cabs.json' found, exiting..."))
+        print(ctxt.red("✖ Neither 'state.json' nor 'cabs.json' found, exiting..."))
         sys.exit(1)
     atexit.register(write_state)
     signal.signal(signal.SIGINT, clean_exit)
 
 
 def main():
-    print("Select option:")
-    print("1) Add new student entry")
-    print("2) View cab allotment")
-    print("3) Dispatch cabs")
-    print("4) Quit")
+    clear()
+    print(ctxt.cyan("========================================"))
+    print(ctxt.cyan("|      BITS CAB POOL MATCHER           |"))
+    print(ctxt.cyan("========================================"))
+    print(" 1) Add new student entry")
+    print(" 2) View cab allotment preview")
+    print(" 3) Dispatch cabs")
+    print(" 4) Quit application")
+    print(ctxt.cyan("----------------------------------------"))
     
-    i = input("Selected option: ")
+    i = input(ctxt.yellow("Select option (1-4): ")).strip()
     
     if i == "1":
         clear()
@@ -158,91 +165,126 @@ def main():
         menu_dispatch()
     elif i == "4":
         clear()
-        print("Quitting...")
+        print(ctxt.cyan("Saving and quitting application..."))
         write_state()
         sys.exit()
     else:
         clear()
-        print(ctxt.red("Invalid choice, try again"))
+        print(ctxt.red("✖ Invalid choice. Please enter a number between 1 and 4."))
+        pause()
 
 
 def menu_add_student():
-    name = input("Enter name of student: ")
+    print(ctxt.cyan("- ADD NEW RIDE REQUEST"))
+    name = input("Enter student name: ").strip()
     destination = ""
     time_slot = ""
     year = -1
 
     while True:
-        destination = input("Enter destination (Delhi or Jaipur): ").lower()
+        destination = input("Enter destination (Delhi / Jaipur): ").strip().lower()
         if destination in ["delhi", "jaipur"]:
             break
         else:
-            print(ctxt.red("Invalid destination. Enter either Delhi or Jaipur"))
+            print(ctxt.red("✖ Invalid destination. Please enter either Delhi or Jaipur."))
 
     while True:
-        time_slot = input("Enter time slot (Morning, Afternoon, Evening, Night): ").lower()
+        time_slot = input("Enter time slot (Morning / Afternoon / Evening / Night): ").strip().lower()
         if time_slot in ["morning", "afternoon", "evening", "night"]:
             break
         else:
-            print(ctxt.red("Invalid time slot"))
+            print(ctxt.red("✖ Invalid time slot."))
     
     while True:
-        year = input("Enter year (1 to 5): ")
+        year = input("Enter academic year (1 to 5): ").strip()
         if year in ["1", "2", "3", "4", "5"]:
             year = int(year)
             break
         else:
-            print(ctxt.red("Invalid year. Year must be 1-5"))
+            print(ctxt.red("✖ Invalid year. Year must be between 1 and 5."))
     
     state["requests"].append(RideRequest(name, destination, time_slot, year))
     clear()
-    print(f"Successfully added! Time stamp: {state["requests"][-1].timestamp}")
+    print(ctxt.green(f"✔ Request successfully registered!"))
+    print(ctxt.magenta(f"Timestamp: {state["requests"][-1].timestamp.strftime('%Y-%m-%d %H:%M:%S')}"))
+    pause()
 
 
 def menu_view_cabs():
     allot_cabs()
+    print(ctxt.cyan("- CAB ALLOTMENT PREVIEW"))
     for cab in state["cabs"]:
-        # make the colors different for dispatched and undispatched cabs
         if cab.has_left:
-            print(ctxt.red(cab))
+            print(ctxt.red(f"{cab} [🔒]"))
         else:
-            print(ctxt.blue(cab))
+            print(ctxt.blue(f"{cab}"))
 
         if cab.students:
             for student in cab.students:
-                print(ctxt.yellow(f"  - {student}"))
+                print(ctxt.yellow(f"    ↳ {student}"))
         else:
-            print(ctxt.red("  - No students assigned yet"))
-    print(ctxt.magenta(f"Number of students waiting for cabs: {len(state['requests'])}"))
+            print(ctxt.magenta("    ↳ No students assigned yet"))
+    
+    print(ctxt.cyan("----------------------------------------"))
+    assigned = sum(len(cab.students) for cab in state["cabs"] if not cab.has_left)
+    print(ctxt.magenta(f"Total students waiting in queue: {len(state['requests']) - assigned}"))
+    pause()
 
 
 def menu_dispatch():
     allot_cabs()
-    for i, cab in enumerate(state["cabs"]):
-        if not cab.has_left:
-            print(ctxt.blue(str(i+1) + " " + str(cab)))
-            if cab.students:
-                for student in cab.students:
-                    print(ctxt.yellow(f"  - {student}"))
-            else:
-                print(ctxt.red("  - No students assigned yet"))
-    print(ctxt.magenta(f"Number of students waiting for cabs: {len(state['requests'])}"))
-    cab_number = input("Press number of cab to dispatch (or press Enter to go back): ")
-    if cab_number.isdigit():
-        cab_index = int(cab_number) - 1
-        if 0 <= cab_index < len(state["cabs"]):
-            dispatched_cab = state["cabs"][cab_index]
-            dispatched_cab.has_left = True
-            for student in dispatched_cab.students:
-                if student in state["requests"]:
-                    state["requests"].remove(student)
-            print(ctxt.green("Cab dispatched successfully!"))
+    print(ctxt.cyan("- DISPATCH CAB MENU"))
+    open_cabs = [cab for cab in state["cabs"] if not cab.has_left]
+    if len(open_cabs) == 0:
+        print(ctxt.red("✖ No open cabs available to dispatch!"))
+        pause()
+        return
+    
+    destination = ""
+    while True:
+        destination = input("Enter destination (Delhi / Jaipur): ").strip().lower()
+        if destination in ["delhi", "jaipur"]:
+            break
         else:
-            clear()
-            print(ctxt.red("Invalid cab number"))
-    else:
-        print("Returning to main menu...")
+            print(ctxt.red("✖ Invalid destination. Please enter either Delhi or Jaipur."))
 
+    time_slot = ""
+    while True:
+        time_slot = input("Enter time slot (Morning / Afternoon / Evening / Night): ").strip().lower()
+        if time_slot in ["morning", "afternoon", "evening", "night"]:
+            break
+        else:
+            print(ctxt.red("✖ Invalid time slot."))
+
+    target_cab = None
+    for cab in state["cabs"]:
+        if cab.destination == destination and cab.time_slot == time_slot and not cab.has_left:
+            target_cab = cab
+            break
+
+    if not target_cab:
+        print(ctxt.red(f"✖ No open cabs found for {destination} ({time_slot})."))
+        pause()
+        return
+
+    print(ctxt.blue(f"\nFound Open Cab: {target_cab}"))
+    if target_cab.students:
+        for student in target_cab.students:
+            print(ctxt.yellow(f"    ↳ {student}"))
+    else:
+        print(ctxt.magenta("    ↳ No students assigned yet"))
+    
+    confirm = input(ctxt.yellow("\nDispatch this cab? (y/n): ")).strip().lower()
+    if confirm == 'y':
+        target_cab.has_left = True
+        for student in target_cab.students:
+            if student in state["requests"]:
+                state["requests"].remove(student)
+        print(ctxt.green(f"✔ Cab driven by {target_cab.driver_name} dispatched successfully!"))
+    else:
+        print("Dispatch cancelled. Returning to main menu...")
+    
+    pause()
 
 
 clear()
